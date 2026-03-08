@@ -1,0 +1,27 @@
+# Binary
+bootstrap
+
+# Build artifacts
+*.exe
+*.out
+
+# AWS SAM
+.aws-sam/
+
+# Environment
+.env
+*.env
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Mac
+.DS_Store
+
+# Go
+vendor/
+
+# Local SAM environment (contains credentials locales)
+env.local.json
