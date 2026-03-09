@@ -55,6 +55,18 @@ type Expense struct {
 	Recurrence    *RecurrenceDetails `json:"recurrence,omitempty"    dynamodbav:"recurrence,omitempty"`
 }
 
+// UpdateExpenseRequest es el body esperado para actualizar un gasto
+type UpdateExpenseRequest struct {
+	Total         float64            `json:"total"          binding:"required,gt=0"`
+	Category      ExpenseCategory    `json:"category"       binding:"required"`
+	Description   string             `json:"description"    binding:"required"`
+	PaymentMethod PaymentMethod      `json:"paymentMethod"  binding:"required"`
+	ExpenseDate   string             `json:"expenseDate"    binding:"required"`
+	Recipient     string             `json:"recipient,omitempty"`
+	IsRecurring   bool               `json:"isRecurring"`
+	Recurrence    *RecurrenceDetails `json:"recurrence,omitempty"`
+}
+
 // CreateExpenseRequest es el body esperado para registrar un gasto
 type CreateExpenseRequest struct {
 	Total         float64            `json:"total"          binding:"required,gt=0"`

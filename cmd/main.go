@@ -42,7 +42,7 @@ func init() {
 	r.Use(gin.Recovery())
 	r.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -55,6 +55,8 @@ func init() {
 	{
 		expenses.POST("", h.Register)
 		expenses.GET("", h.GetAll)
+		expenses.PUT("/:id", h.Update)
+		expenses.DELETE("/:id", h.Delete)
 	}
 
 	ginLambda = ginadapter.New(r)

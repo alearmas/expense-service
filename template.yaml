@@ -20,7 +20,7 @@ Resources:
       Name: ExpensesApi
       StageName: Prod
       Cors:
-        AllowMethods: "'OPTIONS,POST,GET'"
+        AllowMethods: "'OPTIONS,GET,POST,PUT,DELETE'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
         AllowOrigin: "'*'"
 
@@ -53,6 +53,30 @@ Resources:
           Properties:
             Path: /expenses
             Method: POST
+            RestApiId: !Ref ExpensesApi
+        OptionsExpenses:
+          Type: Api
+          Properties:
+            Path: /expenses
+            Method: OPTIONS
+            RestApiId: !Ref ExpensesApi
+        UpdateExpense:
+          Type: Api
+          Properties:
+            Path: /expenses/{id}
+            Method: PUT
+            RestApiId: !Ref ExpensesApi
+        DeleteExpense:
+          Type: Api
+          Properties:
+            Path: /expenses/{id}
+            Method: DELETE
+            RestApiId: !Ref ExpensesApi
+        OptionsExpenseById:
+          Type: Api
+          Properties:
+            Path: /expenses/{id}
+            Method: OPTIONS
             RestApiId: !Ref ExpensesApi
       Environment:
         Variables:

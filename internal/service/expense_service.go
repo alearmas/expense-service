@@ -10,29 +10,26 @@ import (
 	"github.com/alearmas/expense-service/pkg/apperrors"
 )
 
-// ExpenseRepository define el contrato de persistencia que el servicio requiere.
-// Cualquier tipo que implemente Save y FindAll puede usarse (real DynamoDB o mock de tests).
 type ExpenseRepository interface {
 	Save(ctx context.Context, expense *model.Expense) error
 	FindAll(ctx context.Context) ([]*model.Expense, error)
+	FindByID(ctx context.Context, expenseID string) (*model.Expense, error)
+	Update(ctx context.Context, expense *model.Expense) error
+	Delete(ctx context.Context, expenseID string) error
 }
 
-// ExpenseService contiene la lógica de negocio para gastos
 type ExpenseService struct {
 	repo ExpenseRepository
 }
 
-// NewExpenseService crea una nueva instancia del servicio
 func NewExpenseService(repo ExpenseRepository) *ExpenseService {
 	return &ExpenseService{repo: repo}
 }
 
-// Register valida y persiste un nuevo gasto
 func (s *ExpenseService) Register(ctx context.Context, req *model.CreateExpenseRequest) (*model.Expense, error) {
 	if err := s.validate(req); err != nil {
 		return nil, err
 	}
-
 	expense := &model.Expense{
 		ExpenseID:     uuid.New().String(),
 		Total:         req.Total,
@@ -44,30 +41,57 @@ func (s *ExpenseService) Register(ctx context.Context, req *model.CreateExpenseR
 		IsRecurring:   req.IsRecurring,
 		Recurrence:    req.Recurrence,
 	}
-
 	slog.Info("📥 Registrando gasto", "expenseID", expense.ExpenseID, "category", expense.Category)
-
 	if err := s.repo.Save(ctx, expense); err != nil {
 		return nil, fmt.Errorf("error al guardar el gasto: %w", err)
 	}
-
 	slog.Info("✅ Gasto registrado exitosamente", "expenseID", expense.ExpenseID)
 	return expense, nil
 }
 
-// GetAll retorna todos los gastos registrados
 func (s *ExpenseService) GetAll(ctx context.Context) ([]*model.Expense, error) {
 	slog.Info("🔎 Obteniendo todos los gastos")
-
 	expenses, err := s.repo.FindAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error al obtener gastos: %w", err)
 	}
-
 	return expenses, nil
 }
 
-// validate aplica las reglas de negocio sobre el request
+func (s *ExpenseService) Update(ctx context.Context, expenseID string, req *model.UpdateExpenseRequest) (*model.Expense, error) {
+	existing, err := s.repo.FindByID(ctx, expenseID)
+	if err != nil {
+		return nil, err
+	}
+	existing.Total = req.Total
+	existing.Category = req.Category
+	existing.Description = req.Description
+	existing.PaymentMethod = req.PaymentMethod
+	existing.ExpenseDate = req.ExpenseDate
+	existing.Recipient = req.Recipient
+	existing.IsRecurring = req.IsRecurring
+	existing.Recurrence = req.Recurrence
+
+	slog.Info("✏️ Actualizando gasto", "expenseID", expenseID)
+	if err := s.repo.Update(ctx, existing); err != nil {
+		return nil, fmt.Errorf("error al actualizar el gasto: %w", err)
+	}
+	slog.Info("✅ Gasto actualizado exitosamente", "expenseID", expenseID)
+	return existing, nil
+}
+
+func (s *ExpenseService) Delete(ctx context.Context, expenseID string) error {
+	if _, err := s.repo.FindByID(ctx, expenseID); err != nil {
+		return err
+	}
+	slog.Info("🗑️ Eliminando gasto", "expenseID", expenseID)
+	if err := s.repo.Delete(ctx, expenseID); err != nil {
+		return fmt.Errorf("error al eliminar el gasto: %w", err)
+	}
+	slog.Info("✅ Gasto eliminado exitosamente", "expenseID", expenseID)
+	return nil
+}
+
 func (s *ExpenseService) validate(req *model.CreateExpenseRequest) error {
 	if req.Total <= 0 {
 		return &apperrors.ErrInvalidInput{Field: "total", Message: "debe ser mayor a 0"}

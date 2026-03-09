@@ -12,10 +12,11 @@ import (
 )
 
 // ExpenseService define el contrato de negocio que el handler requiere.
-// Cualquier tipo que implemente Register y GetAll puede usarse (real o mock de tests).
 type ExpenseService interface {
 	Register(ctx context.Context, req *model.CreateExpenseRequest) (*model.Expense, error)
 	GetAll(ctx context.Context) ([]*model.Expense, error)
+	Update(ctx context.Context, expenseID string, req *model.UpdateExpenseRequest) (*model.Expense, error)
+	Delete(ctx context.Context, expenseID string) error
 }
 
 // ExpenseHandler maneja las peticiones HTTP para gastos
@@ -60,6 +61,51 @@ func (h *ExpenseHandler) GetAll(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, expenses)
+}
+
+// Update godoc
+// PUT /expenses/:id
+func (h *ExpenseHandler) Update(c *gin.Context) {
+	expenseID := c.Param("id")
+	if expenseID == "" {
+		c.JSON(http.StatusBadRequest, errorResponse("expenseID requerido"))
+		return
+	}
+
+	var req model.UpdateExpenseRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse(err.Error()))
+		return
+	}
+
+	slog.Info("📩 Recibida solicitud de actualización de gasto", "expenseID", expenseID)
+
+	expense, err := h.service.Update(c.Request.Context(), expenseID, &req)
+	if err != nil {
+		handleServiceError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, expense)
+}
+
+// Delete godoc
+// DELETE /expenses/:id
+func (h *ExpenseHandler) Delete(c *gin.Context) {
+	expenseID := c.Param("id")
+	if expenseID == "" {
+		c.JSON(http.StatusBadRequest, errorResponse("expenseID requerido"))
+		return
+	}
+
+	slog.Info("📩 Recibida solicitud de eliminación de gasto", "expenseID", expenseID)
+
+	if err := h.service.Delete(c.Request.Context(), expenseID); err != nil {
+		handleServiceError(c, err)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 // handleServiceError mapea errores de negocio a respuestas HTTP
